@@ -1,4 +1,4 @@
-package com.example.techiteasy.models;
+package com.example.techh.models;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
