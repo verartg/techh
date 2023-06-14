@@ -1,61 +1,33 @@
-package com.example.techh.models;
+package com.example.techh.Dtos;
 
-import jakarta.persistence.*;
-import java.util.List;
+import com.example.techh.models.RemoteController;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 
-@Entity
-public class Television {
+// Deze klasse wordt gebruikt voor je Post en Put methodes, dus daar waar je een Television als body mee geeft in Postman.
 
-    @Id
-    @GeneratedValue
-    private Long id;
-    private String type;
-    private String brand;
-    private String name;
-    private Double price;
-    private Double availableSize;
-    private Double refreshRate;
-    private String screenType;
-    private String screenQuality;
-    private Boolean smartTv;
-    private Boolean wifi;
-    private Boolean voiceControl;
-    private Boolean hdr;
-    private Boolean bluetooth;
-    private Boolean ambiLight;
-    private Integer originalStock;
-    private Integer sold;
-
-    // Dit is de owner kan van de relatie. Er staat een foreign key in de database
-    @OneToOne
-    private RemoteController remoteController;
-
-    @OneToMany(mappedBy = "television")
-    private List<CIModule> ciModule;
-
-    public List<CIModule> getCiModule() {
-        return ciModule;
-    }
-
-    @ManyToMany
-    @JoinTable(
-            name = "television_wallbracket",
-            joinColumns = @JoinColumn(name = "television_id"),
-            inverseJoinColumns = @JoinColumn(name = "wallBracket_id")
-    )
-    private List<WallBracket> wallBrackets;
-
-    public List<WallBracket> getWallBrackets() {
-        return wallBrackets;
-    }
-
-    public void setWallBrackets(List<WallBracket> wallBrackets) {
-        this.wallBrackets = wallBrackets;
-    }
-
-    public void setCiModule(List<CIModule> ciModule) {
-        this.ciModule = ciModule;
-    }
+public class TelevisionInputDto {
+    public Long id;
+    @NotBlank
+    public String type;
+    public String brand;
+    @NotBlank
+    public String name;
+    @Min(value=1, message = "price cannot be negative or zero")
+    public Double price;
+    public Double availableSize;
+    public Double refreshRate;
+    public String screenType;
+    public String screenQuality;
+    public Boolean smartTv;
+    public Boolean wifi;
+    public Boolean voiceControl;
+    public Boolean hdr;
+    public Boolean bluetooth;
+    public Boolean ambiLight;
+    public Integer originalStock;
+    public Integer sold;
+    public RemoteController remoteController;
 
     public RemoteController getRemoteController() {
         return remoteController;
@@ -64,31 +36,6 @@ public class Television {
     public void setRemoteController(RemoteController remoteController) {
         this.remoteController = remoteController;
     }
-
-    //    //    constructors hoeven niet per se aangemaakt te worden
-////    // Een default constructor
-//    public Television(){}
-//
-//// Een constructor met alle gevraagde variable
-//    public Television(Long id, String type, String brand, String name, Double price, Double availableSize, Double refreshRate, String screenType, String screenQuality, Boolean smartTv, Boolean wifi, Boolean voiceControl, Boolean hdr, Boolean bluetooth, Boolean ambiLight, Integer originalStock, Integer sold) {
-//        this.id = id;
-//        this.type = type;
-//        this.brand = brand;
-//        this.name = name;
-//        this.price = price;
-//        this.availableSize = availableSize;
-//        this.refreshRate = refreshRate;
-//        this.screenType = screenType;
-//        this.screenQuality = screenQuality;
-//        this.smartTv = smartTv;
-//        this.wifi = wifi;
-//        this.voiceControl = voiceControl;
-//        this.hdr = hdr;
-//        this.bluetooth = bluetooth;
-//        this.ambiLight = ambiLight;
-//        this.originalStock = originalStock;
-//        this.sold = sold;
-//    }
 
     public Long getId() {
         return id;
@@ -225,5 +172,4 @@ public class Television {
     public void setSold(Integer sold) {
         this.sold = sold;
     }
-
 }

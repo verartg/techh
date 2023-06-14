@@ -1,90 +1,88 @@
 package com.example.techh.controllers;
 
-import com.example.techh.exceptions.RecordNotFoundException;
+import com.example.techh.Dtos.TelevisionDto;
+import com.example.techh.Dtos.TelevisionInputDto;
 import com.example.techh.exceptions.TooManyCharException;
-import com.example.techh.models.Television;
-import com.example.techh.repositories.TelevisionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.techh.services.TelevisionService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 
-
+//Pas de RequestMappings in de TelevisionController, zodat de controller het verzoek doet aan de servicelaag
+// en het response ook ontvangt van de servicelaag
+// (dit is omdat we de Controller eigenlijk zo dom mogelijk willen houden).
 @RestController
 @RequestMapping("/televisions")
 public class TelevisionController {
-    @Autowired
-    private TelevisionRepository televisionRepository;
 
-    public TelevisionController(TelevisionRepository televisionRepository){
-        this.televisionRepository = televisionRepository;
+    // We importeren hier (via de constructor, maar het mag ook @Autowired zijn) nu de Service in plaats van direct de Repository.
+    private final TelevisionService televisionService;
+//    private final TelevisionWallBracketService televisionWallBracketService;
+
+    //Maak in de TelevisionController een @Autowired om de Service te kunnen gebruiken in de Controller.
+    public TelevisionController(TelevisionService televisionService) {
+        this.televisionService = televisionService;
     }
 
+    // Je ziet dat de return waarde van deze methode nu ResponseEntity<List<TelevisionDto>> is in plaats van <ResponseEntity<List<Television>>
     @GetMapping
-    public ResponseEntity<Iterable<Television>> getTelevisions() {
-        return ResponseEntity.ok(televisionRepository.findAll());
+    public ResponseEntity<List<TelevisionDto>> getTelevisions(@RequestParam(value = "brand", required = false) Optional<String> brand) {
+
+        List<TelevisionDto> televisionDtos;
+
+        if (brand.isEmpty()) {
+            televisionDtos = televisionService.getTelevisions();
+        } else {
+            televisionDtos = televisionService.getTelevisionsByBrand(brand.get());
+        }
+        return ResponseEntity.ok().body(televisionService.getTelevisions());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Television> getTelevision(@PathVariable("id") Long id) {
-        Optional<Television> optionalTelevision = televisionRepository.findById(id);
-        if (optionalTelevision.isEmpty()) {
-            throw new RecordNotFoundException("Id " + id + " does not exist");
-        }
-        Television t = optionalTelevision.get();
-        return ResponseEntity.ok().body(t);
+    public ResponseEntity<TelevisionDto> getTelevision(@PathVariable("id") Long id) {
+        TelevisionDto television = televisionService.getTelevision(id);
+
+        return ResponseEntity.ok().body(television);
     }
 
     @PostMapping("/addtelevision")
-    public ResponseEntity<Television> addTelevision(@RequestBody Television t) throws TooManyCharException {
-        if (t.getBrand().length() > 20) {
+    public ResponseEntity<TelevisionDto> addTelevision(@Valid @RequestBody TelevisionInputDto television) throws TooManyCharException {
+        if (television.getBrand().length() > 20) {
             throw new TooManyCharException("Name of brand can't be longer than 20 characters");
         }
-        televisionRepository.save(t);
-        URI uri = URI.create(ServletUriComponentsBuilder
-                .fromCurrentRequest().path("/" + t.getId()).toUriString());
-        return ResponseEntity.created(uri).body(t);
+        TelevisionDto dto = televisionService.saveTelevision(television);
+//        URI uri = URI.create(ServletUriComponentsBuilder
+//                .fromCurrentRequest().path("/" + television.getId()).toUriString());
+        return ResponseEntity.created(null).body(dto);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Television> updateTelevision(@PathVariable Long id, @RequestBody Television t) {
-        Optional<Television> television = televisionRepository.findById(id);
-        if (television.isEmpty()) {
-            throw new RecordNotFoundException("Id " + id + " does not exist");
-        } else {
-            Television television1 = television.get();
-            television1.setType(t.getType());
-            television1.setBrand(t.getBrand());
-            television1.setName(t.getName());
-            television1.setPrice(t.getPrice());
-            television1.setAvailableSize(t.getAvailableSize());
-            television1.setRefreshRate(t.getRefreshRate());
-            television1.setScreenType(t.getScreenType());
-            television1.setScreenQuality(t.getScreenQuality());
-            television1.setSmartTv(t.getSmartTv());
-            television1.setSmartTv(t.getSmartTv());
-            television1.setWifi(t.getWifi());
-            television1.setVoiceControl(t.getVoiceControl());
-            television1.setHdr(t.getHdr());
-            television1.setBluetooth(t.getBluetooth());
-            television1.setAmbiLight(t.getAmbiLight());
-            television1.setOriginalStock(t.getOriginalStock());
-            television1.setSold(t.getSold());
-            Television returnTelevision = televisionRepository.save(television1);
-            return ResponseEntity.ok().body(returnTelevision);
+    public ResponseEntity<Object> updateTelevision(@PathVariable Long id, @Valid @RequestBody TelevisionInputDto television) {
+        TelevisionDto dto = televisionService.updateTelevision(id, television);
+            return ResponseEntity.ok().body(dto);
         }
+        //in de uitwerkingen staat onderstaande ook met een requestbody en een pathvariable.
+    @PutMapping("/{id}/remote/{remotecontrollerId}")
+    public ResponseEntity<TelevisionDto> assignRemoteControllerToTelevision(@PathVariable Long id, @PathVariable Long remotecontrollerId) {
+            return ResponseEntity.ok(televisionService.assignRemoteControllerToTelevision(id, remotecontrollerId));
     }
+    @PutMapping("/{id}/wallbracket/{wallbracket_id}")
+    public ResponseEntity<String> assignWallBracketToTelevision(@PathVariable Long id, @PathVariable Long wallbracket_id) {
+        return ResponseEntity.ok(televisionService.assignWallBracketToTelevision(id, wallbracket_id));
+    }
+    //onderstaande komt uit de uitwerkingen.
+    // Deze methode is om alle wallbrackets op te halen die aan een bepaalde television gekoppeld zijn.
+    // Deze methode maakt gebruik van de televisionWallBracketService.
+//    @GetMapping("/televisions/wallBrackets/{televisionId}")
+//    public ResponseEntity<Collection<WallBracketDto>> getWallBracketsByTelevisionId(@PathVariable("televisionId") Long televisionId){
+//        return ResponseEntity.ok(televisionWallBracketService.getWallBracketsByTelevisionId(televisionId));
+//    }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Object> deleteTelevision(@PathVariable("id") Long id) {
-        Optional<Television> television = televisionRepository.findById(id);
-        if (television.isEmpty()) {
-            throw new RecordNotFoundException("Id " + id + " does not exist");
-        } else {
-            televisionRepository.deleteById(id);
+    public ResponseEntity<Object> removeTelevision(@PathVariable Long id) {
+            televisionService.removeTelevision(id);
             return ResponseEntity.noContent().build();
         }
-    }}
+    }
